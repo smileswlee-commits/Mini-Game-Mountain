@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Game Mountain</title>
+  <style>
+    :root {
+      --bg1: #07111f;
+      --bg2: #0f172a;
+      --panel: rgba(15, 23, 42, 0.88);
+      --panel-2: rgba(30, 41, 59, 0.85);
+      --text: #e5eefc;
+      --muted: #9fb2cc;
+      --accent: #60a5fa;
+      --accent-2: #34d399;
+      --accent-3: #fbbf24;
+      --danger: #fb7185;
+      --border: rgba(148, 163, 184, 0.22);
+      --shadow: 0 18px 40px rgba(0,0,0,.28);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(16,185,129,.14), transparent 24%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+    }
+
+    .stars, .stars:before, .stars:after {
+      position: fixed;
+      inset: 0;
+      content: "";
+      pointer-events: none;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,.5), transparent),
+        radial-gradient(2px 2px at 180px 120px, rgba(255,255,255,.4), transparent),
+        radial-gradient(1.5px 1.5px at 300px 70px, rgba(255,255,255,.35), transparent),
+        radial-gradient(2px 2px at 420px 200px, rgba(255,255,255,.4), transparent),
+        radial-gradient(1.5px 1.5px at 600px 80px, rgba(255,255,255,.3), transparent);
+      background-size: 700px 300px;
+      opacity: .6;
+    }
+    .stars:before { transform: translateY(120px); opacity: .35; }
+    .stars:after { transform: translateY(240px); opacity: .2; }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(7, 17, 31, .78);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .hero {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 28px 20px 18px;
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .hero-card, .hero-side {
+      background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(15,23,42,.72));
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 26px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card:after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      right: -30px;
+      top: -30px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(96,165,250,.35), transparent 65%);
+    }
+
+    .hero-side {
+      padding: 20px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(96,165,250,.14);
+      border: 1px solid rgba(96,165,250,.28);
+      color: #bfdbfe;
+      font-size: .84rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      line-height: 1.04;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 1rem;
+      max-width: 760px;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    input, button, select { font: inherit; }
+
+    .search {
+      width: min(370px, 90vw);
+      padding: 13px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(2, 6, 23, .8);
+      color: var(--text);
+      outline: none;
+    }
+
+    .tag, .btn {
+      border-radius: 14px;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform .12s ease, background .2s ease, border-color .2s ease;
+    }
+
+    .tag:hover, .btn:hover { transform: translateY(-1px); }
+
+    .tag {
+      background: rgba(2,6,23,.7);
+      color: var(--text);
+    }
+
+    .tag.active {
+      background: rgba(96,165,250,.18);
+      border-color: rgba(96,165,250,.5);
+      color: #dbeafe;
+    }
+
+    .btn {
+      background: linear-gradient(180deg, #6db6ff, #4b97f0);
+      color: #06101c;
+      font-weight: 800;
+      border: none;
+      box-shadow: 0 12px 22px rgba(59,130,246,.22);
+    }
+    .btn.secondary {
+      background: rgba(30,41,59,.95);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .btn.green {
+      background: linear-gradient(180deg, #6ee7b7, #34d399);
+      box-shadow: 0 12px 22px rgba(16,185,129,.18);
+    }
+    .btn.gold {
+      background: linear-gradient(180deg, #fde68a, #fbbf24);
+      box-shadow: 0 12px 22px rgba(251,191,36,.18);
+    }
+    .btn.pink {
+      background: linear-gradient(180deg, #fda4af, #fb7185);
+      color: white;
+      box-shadow: 0 12px 22px rgba(244,63,94,.18);
+    }
+
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 18px 20px 60px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      padding: 16px 18px;
+      border-radius: 22px;
+      background: rgba(15,23,42,.78);
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+    }
+    .stat-label { color: var(--muted); font-size: .86rem; }
+    .stat strong { display: block; font-size: 1.45rem; margin-top: 4px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(15,23,42,.88), rgba(15,23,42,.72));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-header {
+      padding: 18px 18px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .75rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      border: 1px solid rgba(255,255,255,.09);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      margin-bottom: 8px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .card p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: .95rem;
+      min-height: 40px;
+    }
+
+    .card-body { padding: 16px 18px 18px; }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .col { display: flex; flex-direction: column; gap: 10px; }
+
+    .display {
+      min-height: 52px;
+      border-radius: 16px;
+      background: rgba(2,6,23,.7);
+      border: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 14px;
+      font-weight: 700;
+    }
+
+    .tiny-input, .small-input {
+      padding: 12px 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(2,6,23,.75);
+      color: var(--text);
+      outline: none;
+    }
+    .tiny-input { width: 88px; }
+    .small-input { width: 150px; }
+
+    .board-3, .memory-grid, .mole-grid, .lights-grid, .simon-grid {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .board-3 { grid-template-columns: repeat(3, 1fr); }
+    .memory-grid, .mole-grid, .lights-grid, .simon-grid { grid-template-columns: repeat(4, 1fr); }
+
+    .cell, .mem, .mole, .light, .simon {
+      aspect-ratio: 1;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(30,41,59,.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .1s ease, background .18s ease;
+    }
+    .cell:hover, .mem:hover, .mole:hover, .light:hover, .simon:hover { transform: scale(1.02); }
+    .mole.active { background: #fbbf24; }
+    .light.on { background: #34d399; color: #052e16; }
+
+    .choice-grid, .quiz-grid, .color-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .wide-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-top:10px; }
+
+    .tile {
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(30,41,59,.95);
+      border: 1px solid rgba(255,255,255,.08);
+      text-align: center;
+      cursor: pointer;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    .score { color: #bfdbfe; font-weight: 800; }
+    .emoji-big { font-size: 3rem; }
+    .muted { color: var(--muted); font-size: .9rem; }
+
+    .bar {
+      width: 100%;
+      height: 16px;
+      background: rgba(255,255,255,.07);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.07);
+    }
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #34d399, #60a5fa);
+      transition: width .2s ease;
+    }
+
+    canvas {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(2,6,23,.9), rgba(15,23,42,.88));
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    footer {
+      padding: 28px 20px 40px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr; }
+      main, .hero { padding-left: 14px; padding-right: 14px; }
+      .grid { grid-template-columns: 1fr; }
+      .choice-grid, .quiz-grid, .color-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <header>
+    <section class="hero">
+      <div class="hero-card">
+        <span class="eyebrow">ARCADE COLLECTION</span>
+        <h1>🏔️ Mini Game Mountain</h1>
+        <div class="sub">A better quality mini-game site with more polished visuals, stronger arcade-style gameplay, and doodle-inspired quick challenges. Tap a game and play instantly.</div>
+        <div class="topbar">
+          <input id="searchInput" class="search" placeholder="Search games..." />
+          <button class="tag active" data-filter="all">All</button>
+          <button class="tag" data-filter="arcade">Arcade</button>
+          <button class="tag" data-filter="puzzle">Puzzle</button>
+          <button class="tag" data-filter="reflex">Reflex</button>
+          <button class="tag" data-filter="luck">Luck</button>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="stat-label">Featured upgrades</div>
+        <strong style="font-size:1.2rem;">More doodle-style action</strong>
+        <div class="muted">Added stronger arcade games like Flappy Peak, Memory Match, Simon Says, Lane Dodger, Falling Star Catch, and more.</div>
+        <div class="muted">Everything stays in one file, mobile-friendly, and easy to keep building on.</div>
+      </div>
+    </section>
+  </header>
+
+  <main>
+    <section class="stats">
+      <div class="stat"><div class="stat-label">Games</div><strong>20</strong></div>
+      <div class="stat"><div class="stat-label">Style</div><strong>Arcade + Doodle</strong></div>
+      <div class="stat"><div class="stat-label">Play Mode</div><strong>Instant</strong></div>
+      <div class="stat"><div class="stat-label">Quality</div><strong>Upgraded</strong></div>
+    </section>
+
+    <div id="gamesGrid" class="grid"></div>
+  </main>
+
+  <footer>
+  <button id="fullscreenBtn" class="btn" style="margin-bottom:12px">Go Fullscreen (About:Blank)</button>
+  <div>Mini Game Mountain — upgraded arcade edition</div>
+</footer>
+
+  <script>
+    const grid = document.getElementById('gamesGrid');
+    const searchInput = document.getElementById('searchInput');
+    const tagButtons = document.querySelectorAll('.tag');
+    let activeFilter = 'all';
+
+    const games = [
+      { id:'coin', title:'Coin Flip', category:'luck', emoji:'🪙', desc:'Heads or tails with a cleaner scoreboard.' },
+      { id:'dice', title:'Dice Roller', category:'luck', emoji:'🎲', desc:'Roll one or two dice with smooth display.' },
+      { id:'rps', title:'Rock Paper Scissors', category:'luck arcade', emoji:'✊', desc:'Fast duel against the computer.' },
+      { id:'guess', title:'Number Guess', category:'puzzle', emoji:'🔢', desc:'Guess the hidden number from 1 to 100.' },
+      { id:'reaction', title:'Reaction Test', category:'reflex', emoji:'⚡', desc:'Test your reflexes when the panel turns green.' },
+      { id:'ttt', title:'Tic-Tac-Toe', category:'puzzle', emoji:'⭕', desc:'Classic 2-player board game.' },
+      { id:'memory', title:'Memory Match', category:'puzzle', emoji:'🧠', desc:'Flip and match all emoji pairs.' },
+      { id:'mole', title:'Whack-a-Mole', category:'reflex arcade', emoji:'🐹', desc:'Tap the mole before time runs out.' },
+      { id:'clicker', title:'Speed Clicker', category:'reflex', emoji:'🖱️', desc:'Tap as fast as possible in 5 seconds.' },
+      { id:'target', title:'Target Hunt', category:'reflex arcade', emoji:'🎯', desc:'Hit the moving target for points.' },
+      { id:'math', title:'Math Sprint', category:'puzzle reflex', emoji:'➕', desc:'Answer quick math questions.' },
+      { id:'anagram', title:'Word Scramble', category:'puzzle', emoji:'🔤', desc:'Unscramble the word before peeking.' },
+      { id:'higher', title:'Higher or Lower', category:'luck puzzle', emoji:'📈', desc:'Guess if the next number goes up or down.' },
+      { id:'lights', title:'Lights Out', category:'puzzle', emoji:'💡', desc:'Turn off every tile on the board.' },
+      { id:'racer', title:'Lane Dodger', category:'arcade reflex', emoji:'🚗', desc:'Dodge falling blockers in 3 lanes.' },
+      { id:'catch', title:'Falling Star Catch', category:'arcade reflex', emoji:'⭐', desc:'Catch stars with your basket.' },
+      { id:'quiz', title:'Mini Trivia', category:'puzzle', emoji:'❓', desc:'Quick random trivia questions.' },
+      { id:'emoji', title:'Emoji Slot', category:'luck', emoji:'🎰', desc:'Spin three emoji reels.' },
+      { id:'flappy', title:'Flappy Peak', category:'arcade reflex', emoji:'🕊️', desc:'Doodle-inspired tap flyer through pillars.' },
+      { id:'simon', title:'Simon Says', category:'puzzle reflex', emoji:'🟩', desc:'Repeat the growing color sequence.' },
+    ];
+
+    const templates = {
+      coin: () => `<div class="card-header"><div class="pill">🪙 Luck</div><h2>Coin Flip</h2><p>Heads or tails with a running score.</p></div><div class="card-body"><div class="display" id="coinResult">Flip the coin!</div><div class="row" style="margin-top:10px"><button class="btn" id="flipCoinBtn">Flip</button><span class="score" id="coinScore">Heads: 0 | Tails: 0</span></div></div>`,
+      dice: () => `<div class="card-header"><div class="pill">🎲 Luck</div><h2>Dice Roller</h2><p>Roll one or two dice.</p></div><div class="card-body"><div class="display emoji-big" id="diceResult">🎲</div><div class="row" style="margin-top:10px"><button class="btn" id="roll1Btn">Roll 1</button><button class="btn secondary" id="roll2Btn">Roll 2</button></div></div>`,
+      rps: () => `<div class="card-header"><div class="pill">✊ Arcade</div><h2>Rock Paper Scissors</h2><p>Quick duel against the computer.</p></div><div class="card-body"><div class="choice-grid"><button class="btn rpsBtn" data-pick="rock">Rock</button><button class="btn rpsBtn" data-pick="paper">Paper</button><button class="btn rpsBtn" data-pick="scissors">Scissors</button></div><div class="display" id="rpsResult" style="margin-top:10px">Choose your move.</div></div>`,
+      guess: () => `<div class="card-header"><div class="pill">🔢 Puzzle</div><h2>Number Guess</h2><p>Guess the secret number from 1 to 100.</p></div><div class="card-body"><div class="row"><input class="tiny-input" id="guessInput" type="number" min="1" max="100" placeholder="1-100" /><button class="btn" id="guessBtn">Guess</button><button class="btn secondary" id="guessReset">Reset</button></div><div class="display" id="guessResult" style="margin-top:10px">Start guessing!</div></div>`,
+      reaction: () => `<div class="card-header"><div class="pill">⚡ Reflex</div><h2>Reaction Test</h2><p>Click when the box turns green.</p></div><div class="card-body"><div class="display" id="reactionBox" style="height:110px; cursor:pointer;">Press Start</div><div class="row" style="margin-top:10px"><button class="btn" id="reactionStart">Start</button><span class="score" id="reactionScore">Best: —</span></div></div>`,
+      ttt: () => `<div class="card-header"><div class="pill">⭕ Puzzle</div><h2>Tic-Tac-Toe</h2><p>Classic 2-player game.</p></div><div class="card-body"><div class="display" id="tttStatus">Player X's turn</div><div class="board-3" id="tttBoard"></div><button class="btn secondary" id="tttReset" style="margin-top:10px">Reset</button></div>`,
+      memory: () => `<div class="card-header"><div class="pill">🧠 Puzzle</div><h2>Memory Match</h2><p>Find all the matching pairs.</p></div><div class="card-body"><div class="display" id="memoryStatus">Find all the pairs.</div><div class="memory-grid" id="memoryGrid"></div><button class="btn secondary" id="memoryReset" style="margin-top:10px">Shuffle</button></div>`,
+      mole: () => `<div class="card-header"><div class="pill">🐹 Arcade</div><h2>Whack-a-Mole</h2><p>Tap the mole before it hops away.</p></div><div class="card-body"><div class="row"><span class="score" id="moleScore">Score: 0</span><span class="score" id="moleTime">Time: 15</span></div><div class="mole-grid" id="moleGrid"></div><button class="btn gold" id="moleStart" style="margin-top:10px">Start</button></div>`,
+      clicker: () => `<div class="card-header"><div class="pill">🖱️ Reflex</div><h2>Speed Clicker</h2><p>How many clicks in 5 seconds?</p></div><div class="card-body"><div class="display" id="clickerCount">Clicks: 0</div><div class="row" style="margin-top:10px"><button class="btn" id="clickerStart">Start 5s</button><button class="btn green" id="clickerTap">TAP!</button></div></div>`,
+      target: () => `<div class="card-header"><div class="pill">🎯 Arcade</div><h2>Target Hunt</h2><p>Hit the moving target for 10 seconds.</p></div><div class="card-body"><div class="display" style="padding:0; overflow:hidden; height:190px; position:relative;" id="targetArea"><div id="targetDot" style="position:absolute;width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 35%, #fff, #34d399 35%, #059669); box-shadow:0 0 18px rgba(52,211,153,.45); left:20px; top:20px; cursor:pointer"></div></div><div class="row" style="margin-top:10px"><button class="btn" id="targetStart">Start 10s</button><span class="score" id="targetScore">Score: 0</span></div></div>`,
+      math: () => `<div class="card-header"><div class="pill">➕ Puzzle</div><h2>Math Sprint</h2><p>Solve quick arithmetic questions.</p></div><div class="card-body"><div class="display" id="mathQuestion">Press start for a question.</div><div class="row" style="margin-top:10px"><input class="small-input" id="mathAnswer" placeholder="Answer" /><button class="btn" id="mathSubmit">Submit</button><button class="btn secondary" id="mathStart">Start</button></div><div class="display" id="mathResult" style="margin-top:10px">Score: 0</div></div>`,
+      anagram: () => `<div class="card-header"><div class="pill">🔤 Puzzle</div><h2>Word Scramble</h2><p>Unscramble the hidden word.</p></div><div class="card-body"><div class="display" id="anagramWord">Press New Word</div><div class="row" style="margin-top:10px"><input class="small-input" id="anagramInput" placeholder="Unscramble it" /><button class="btn" id="anagramCheck">Check</button><button class="btn secondary" id="anagramNew">New Word</button></div><div class="display" id="anagramResult" style="margin-top:10px">Ready?</div></div>`,
+      higher: () => `<div class="card-header"><div class="pill">📈 Luck</div><h2>Higher or Lower</h2><p>Guess if the next number is higher or lower.</p></div><div class="card-body"><div class="display" id="higherCurrent">Current Number: ?</div><div class="row" style="margin-top:10px"><button class="btn" id="higherStart">Start</button><button class="btn green" id="higherUp">Higher</button><button class="btn gold" id="higherDown">Lower</button></div><div class="display" id="higherResult" style="margin-top:10px">Score: 0</div></div>`,
+      lights: () => `<div class="card-header"><div class="pill">💡 Puzzle</div><h2>Lights Out</h2><p>Turn off every light on the board.</p></div><div class="card-body"><div class="display" id="lightsStatus">Turn off every light.</div><div class="lights-grid" id="lightsGrid"></div><button class="btn secondary" id="lightsReset" style="margin-top:10px">Reset</button></div>`,
+      racer: () => `<div class="card-header"><div class="pill">🚗 Arcade</div><h2>Lane Dodger</h2><p>Move between lanes and survive.</p></div><div class="card-body"><canvas id="racerCanvas" width="300" height="230"></canvas><div class="row" style="margin-top:10px"><button class="btn" id="racerStart">Start</button><button class="btn secondary" id="racerLeft">⬅️</button><button class="btn secondary" id="racerRight">➡️</button><span class="score" id="racerScore">Score: 0</span></div></div>`,
+      catch: () => `<div class="card-header"><div class="pill">⭐ Arcade</div><h2>Falling Star Catch</h2><p>Catch stars with your basket.</p></div><div class="card-body"><canvas id="catchCanvas" width="300" height="230"></canvas><div class="row" style="margin-top:10px"><button class="btn" id="catchStart">Start</button><button class="btn secondary" id="catchLeft">⬅️</button><button class="btn secondary" id="catchRight">➡️</button><span class="score" id="catchScore">Score: 0</span></div></div>`,
+      quiz: () => `<div class="card-header"><div class="pill">❓ Puzzle</div><h2>Mini Trivia</h2><p>Answer quick random trivia questions.</p></div><div class="card-body"><div class="display" id="quizQ">Press Start Quiz</div><div class="quiz-grid" id="quizChoices" style="margin-top:10px"></div><div class="row" style="margin-top:10px"><button class="btn" id="quizStart">Start Quiz</button><span class="score" id="quizScore">Score: 0</span></div></div>`,
+      emoji: () => `<div class="card-header"><div class="pill">🎰 Luck</div><h2>Emoji Slot</h2><p>Spin the emoji reels.</p></div><div class="card-body"><div class="display emoji-big" id="emojiSlots">🍒 🍋 ⭐</div><div class="row" style="margin-top:10px"><button class="btn pink" id="emojiSpin">Spin</button><span class="score" id="emojiResult">Try your luck!</span></div></div>`,
+      flappy: () => `<div class="card-header"><div class="pill">🕊️ Doodle-style</div><h2>Flappy Peak</h2><p>Tap to glide through mountain pillars.</p></div><div class="card-body"><canvas id="flappyCanvas" width="300" height="230"></canvas><div class="row" style="margin-top:10px"><button class="btn" id="flappyStart">Start</button><button class="btn green" id="flappyJump">Jump</button><span class="score" id="flappyScore">Score: 0</span></div><div class="muted" style="margin-top:6px">Tap Jump or press Space.</div></div>`,
+      simon: () => `<div class="card-header"><div class="pill">🟩 Memory</div><h2>Simon Says</h2><p>Repeat the color sequence as it grows.</p></div><div class="card-body"><div class="display" id="simonStatus">Press Start to begin.</div><div class="simon-grid" id="simonGrid"></div><div class="row" style="margin-top:10px"><button class="btn" id="simonStart">Start</button><span class="score" id="simonScore">Level: 0</span></div></div>`,
+    };
+
+    function renderGames() {
+      const term = searchInput.value.toLowerCase().trim();
+      grid.innerHTML = '';
+      const filtered = games.filter(g =>
+        (activeFilter === 'all' || g.category.includes(activeFilter)) &&
+        (g.title.toLowerCase().includes(term) || g.desc.toLowerCase().includes(term))
+      );
+      filtered.forEach(game => {
+        const card = document.createElement('section');
+        card.className = 'card';
+        card.dataset.category = game.category;
+        card.innerHTML = templates[game.id]();
+        grid.appendChild(card);
+      });
+      attachGameLogic();
+    }
+
+    tagButtons.forEach(btn => btn.addEventListener('click', () => {
+      tagButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      // Fullscreen about:blank launcher
+      document.getElementById('fullscreenBtn')?.addEventListener('click', () => {
+        const newWindow = window.open('about:blank', '_blank');
+        const html = document.documentElement.outerHTML;
+        newWindow.document.write(html);
+        newWindow.document.close();
+      });
+
+    renderGames();
+    }));
+    searchInput.addEventListener('input', renderGames);
+
+    function attachGameLogic() {
+      // Coin
+      let heads = 0, tails = 0;
+      document.getElementById('flipCoinBtn')?.addEventListener('click', () => {
+        const res = Math.random() < 0.5 ? 'Heads 🪙' : 'Tails 🪙';
+        if (res.startsWith('Heads')) heads++; else tails++;
+        document.getElementById('coinResult').textContent = res;
+        document.getElementById('coinScore').textContent = `Heads: ${heads} | Tails: ${tails}`;
+      });
+
+      // Dice
+      const dieFace = n => ['⚀','⚁','⚂','⚃','⚄','⚅'][n-1];
+      document.getElementById('roll1Btn')?.addEventListener('click', () => {
+        const a = 1 + Math.floor(Math.random()*6);
+        document.getElementById('diceResult').textContent = `${dieFace(a)} = ${a}`;
+      });
+      document.getElementById('roll2Btn')?.addEventListener('click', () => {
+        const a = 1 + Math.floor(Math.random()*6), b = 1 + Math.floor(Math.random()*6);
+        document.getElementById('diceResult').textContent = `${dieFace(a)} ${dieFace(b)} = ${a+b}`;
+      });
+
+      // RPS
+      document.querySelectorAll('.rpsBtn').forEach(btn => btn.addEventListener('click', () => {
+        const user = btn.dataset.pick;
+        const options = ['rock','paper','scissors'];
+        const cpu = options[Math.floor(Math.random()*3)];
+        let result = 'Tie!';
+        if ((user==='rock'&&cpu==='scissors')||(user==='paper'&&cpu==='rock')||(user==='scissors'&&cpu==='paper')) result='You win!';
+        else if (user!==cpu) result='Computer wins!';
+        document.getElementById('rpsResult').textContent = `You: ${user} | CPU: ${cpu} | ${result}`;
+      }));
+
+      // Guess
+      let secret = 1 + Math.floor(Math.random()*100), tries = 0;
+      document.getElementById('guessBtn')?.addEventListener('click', () => {
+        const val = Number(document.getElementById('guessInput').value);
+        if (!val) return;
+        tries++;
+        let msg = val < secret ? 'Too low!' : val > secret ? 'Too high!' : `Correct in ${tries} tries!`;
+        document.getElementById('guessResult').textContent = msg;
+      });
+      document.getElementById('guessReset')?.addEventListener('click', () => {
+        secret = 1 + Math.floor(Math.random()*100); tries = 0;
+        document.getElementById('guessResult').textContent = 'New number picked!';
+        document.getElementById('guessInput').value = '';
+      });
+
+      // Reaction
+      let reactionStart = 0, reactionTimeout = null, waitingReaction = false, reactionBest = null;
+      const reactionBox = document.getElementById('reactionBox');
+      document.getElementById('reactionStart')?.addEventListener('click', () => {
+        reactionBox.style.background = '#7f1d1d';
+        reactionBox.textContent = 'Wait for green...';
+        waitingReaction = true;
+        clearTimeout(reactionTimeout);
+        reactionTimeout = setTimeout(() => {
+          reactionBox.style.background = '#14532d';
+          reactionBox.textContent = 'CLICK!';
+          reactionStart = performance.now();
+          waitingReaction = false;
+        }, 1000 + Math.random()*2500);
+      });
+      reactionBox?.addEventListener('click', () => {
+        if (reactionBox.textContent === 'CLICK!') {
+          const ms = Math.round(performance.now() - reactionStart);
+          reactionBox.textContent = `${ms} ms`;
+          reactionBox.style.background = 'rgba(2,6,23,.7)';
+          reactionBest = reactionBest === null ? ms : Math.min(reactionBest, ms);
+          document.getElementById('reactionScore').textContent = `Best: ${reactionBest} ms`;
+        } else if (waitingReaction) {
+          clearTimeout(reactionTimeout);
+          waitingReaction = false;
+          reactionBox.style.background = '#7f1d1d';
+          reactionBox.textContent = 'Too early!';
+        }
+      });
+
+      // TTT
+      const tttBoard = document.getElementById('tttBoard');
+      if (tttBoard) {
+        let board = Array(9).fill('');
+        let player = 'X';
+        const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        const draw = () => {
+          tttBoard.innerHTML = '';
+          board.forEach((val, i) => {
+            const c = document.createElement('div');
+            c.className = 'cell';
+            c.textContent = val;
+            c.onclick = () => move(i);
+            tttBoard.appendChild(c);
+          });
+        };
+        const winner = () => {
+          for (const [a,b,c] of wins) if (board[a] && board[a]===board[b] && board[a]===board[c]) return board[a];
+          return board.includes('') ? null : 'draw';
+        };
+        const move = i => {
+          if (board[i] || winner()) return;
+          board[i] = player;
+          const w = winner();
+          if (w) document.getElementById('tttStatus').textContent = w==='draw' ? 'Draw!' : `Player ${w} wins!`;
+          else {
+            player = player === 'X' ? 'O' : 'X';
+            document.getElementById('tttStatus').textContent = `Player ${player}'s turn`;
+          }
+          draw();
+        };
+        document.getElementById('tttReset').onclick = () => {
+          board = Array(9).fill(''); player = 'X';
+          document.getElementById('tttStatus').textContent = `Player X's turn`;
+          draw();
+        };
+        draw();
+      }
+
+      // Memory
+      const memoryGrid = document.getElementById('memoryGrid');
+      if (memoryGrid) {
+        const icons = ['🍎','🍌','🍇','🍓','🍍','🥝','🍒','🍉'];
+        let deck = [], open = [], matched = [];
+        const shuffle = arr => arr.sort(()=>Math.random()-0.5);
+        function setupMemory() {
+          deck = shuffle([...icons, ...icons]);
+          open = []; matched = [];
+          renderMemory();
+          document.getElementById('memoryStatus').textContent = 'Find all the pairs.';
+        }
+        function renderMemory() {
+          memoryGrid.innerHTML = '';
+          deck.forEach((card, i) => {
+            const d = document.createElement('div');
+            d.className = 'mem';
+            d.textContent = open.includes(i) || matched.includes(i) ? card : '❓';
+            d.onclick = () => flip(i);
+            memoryGrid.appendChild(d);
+          });
+        }
+        function flip(i) {
+          if (open.includes(i) || matched.includes(i) || open.length===2) return;
+          open.push(i);
+          renderMemory();
+          if (open.length===2) {
+            const [a,b] = open;
+            if (deck[a] === deck[b]) {
+              matched.push(a,b);
+              open = [];
+              if (matched.length === deck.length) document.getElementById('memoryStatus').textContent = 'You matched everything!';
+              renderMemory();
+            } else {
+              setTimeout(() => { open = []; renderMemory(); }, 650);
+            }
+          }
+        }
+        document.getElementById('memoryReset').onclick = setupMemory;
+        setupMemory();
+      }
+
+      // Mole
+      const moleGrid = document.getElementById('moleGrid');
+      if (moleGrid) {
+        moleGrid.innerHTML = '';
+        for (let i=0;i<16;i++) {
+          const d = document.createElement('div');
+          d.className = 'mole'; d.textContent = '🕳️';
+          moleGrid.appendChild(d);
+        }
+        let moleScore = 0, moleTime = 15, moleInterval = null, moleTimer = null, active = -1;
+        function activate() {
+          document.querySelectorAll('.mole').forEach(m=>{ m.classList.remove('active'); m.textContent='🕳️'; });
+          active = Math.floor(Math.random()*16);
+          const m = document.querySelectorAll('.mole')[active];
+          m.classList.add('active'); m.textContent = '🐹';
+        }
+        document.querySelectorAll('.mole').forEach((m, idx) => m.onclick = () => {
+          if (idx===active) {
+            moleScore++;
+            active = -1;
+            m.classList.remove('active');
+            m.textContent = '✅';
+            document.getElementById('moleScore').textContent = `Score: ${moleScore}`;
+          }
+        });
+        document.getElementById('moleStart').onclick = () => {
+          moleScore=0; moleTime=15;
+          document.getElementById('moleScore').textContent='Score: 0';
+          document.getElementById('moleTime').textContent='Time: 15';
+          clearInterval(moleInterval); clearInterval(moleTimer);
+          activate();
+          moleInterval = setInterval(activate, 650);
+          moleTimer = setInterval(() => {
+            moleTime--;
+            document.getElementById('moleTime').textContent = `Time: ${moleTime}`;
+            if (moleTime<=0) { clearInterval(moleInterval); clearInterval(moleTimer); active=-1; }
+          }, 1000);
+        };
+      }
+
+      // Clicker
+      let clickerActive = false, clickerCount = 0;
+      document.getElementById('clickerStart')?.addEventListener('click', ()=>{
+        clickerActive = true; clickerCount = 0;
+        document.getElementById('clickerCount').textContent = 'Clicks: 0';
+        setTimeout(()=>{ clickerActive=false; document.getElementById('clickerCount').textContent += ' — Time up!'; }, 5000);
+      });
+      document.getElementById('clickerTap')?.addEventListener('click', ()=>{
+        if (!clickerActive) return;
+        clickerCount++;
+        document.getElementById('clickerCount').textContent = `Clicks: ${clickerCount}`;
+      });
+
+      // Target
+      const targetArea = document.getElementById('targetArea');
+      const targetDot = document.getElementById('targetDot');
+      if (targetArea && targetDot) {
+        let targetScore = 0, targetPlaying = false, targetTimer = null;
+        const move = () => {
+          const w = targetArea.clientWidth - 42;
+          const h = targetArea.clientHeight - 42;
+          targetDot.style.left = Math.random() * w + 'px';
+          targetDot.style.top = Math.random() * h + 'px';
+        };
+        targetDot.onclick = () => {
+          if (!targetPlaying) return;
+          targetScore++;
+          document.getElementById('targetScore').textContent = `Score: ${targetScore}`;
+          move();
+        };
+        document.getElementById('targetStart').onclick = () => {
+          targetScore = 0;
+          targetPlaying = true;
+          document.getElementById('targetScore').textContent = 'Score: 0';
+          move();
+          clearTimeout(targetTimer);
+          targetTimer = setTimeout(() => { targetPlaying = false; }, 10000);
+        };
+      }
+
+      // Math
+      let mathAns = null, mathScore = 0;
+      function nextMathQ() {
+        const a = 1 + Math.floor(Math.random()*20);
+        const b = 1 + Math.floor(Math.random()*20);
+        const op = ['+','-','×'][Math.floor(Math.random()*3)];
+        mathAns = op === '+' ? a+b : op === '-' ? a-b : a*b;
+        document.getElementById('mathQuestion').textContent = `${a} ${op} ${b} = ?`;
+      }
+      document.getElementById('mathStart')?.addEventListener('click', ()=>{ mathScore=0; nextMathQ(); document.getElementById('mathResult').textContent='Score: 0'; });
+      document.getElementById('mathSubmit')?.addEventListener('click', ()=>{
+        const val = Number(document.getElementById('mathAnswer').value);
+        if (Number.isNaN(val) || mathAns===null) return;
+        if (val === mathAns) mathScore++;
+        document.getElementById('mathResult').textContent = val === mathAns ? `Correct! Score: ${mathScore}` : `Nope — answer was ${mathAns}. Score: ${mathScore}`;
+        document.getElementById('mathAnswer').value = '';
+        nextMathQ();
+      });
+
+      // Anagram
+      const scrambleWords = ['mountain','puzzle','planet','banana','guitar','rocket','castle','silver','forest','winter'];
+      let currentWord = '';
+      function newAnagram() {
+        currentWord = scrambleWords[Math.floor(Math.random()*scrambleWords.length)];
+        const scrambled = currentWord.split('').sort(()=>Math.random()-0.5).join('');
+        document.getElementById('anagramWord').textContent = scrambled;
+        document.getElementById('anagramResult').textContent = 'Unscramble it!';
+        document.getElementById('anagramInput').value='';
+      }
+      document.getElementById('anagramNew')?.addEventListener('click', newAnagram);
+      document.getElementById('anagramCheck')?.addEventListener('click', ()=>{
+        const guess = document.getElementById('anagramInput').value.trim().toLowerCase();
+        document.getElementById('anagramResult').textContent = guess === currentWord ? 'Correct!' : `Answer: ${currentWord}`;
+      });
+      if (document.getElementById('anagramWord')) newAnagram();
+
+      // Higher Lower
+      let highCurrent = null, highScore = 0;
+      function startHigher() {
+        highCurrent = 1 + Math.floor(Math.random()*13);
+        highScore = 0;
+        document.getElementById('higherCurrent').textContent = `Current Number: ${highCurrent}`;
+        document.getElementById('higherResult').textContent = 'Score: 0';
+      }
+      function guessHigher(dir) {
+        if (highCurrent===null) return;
+        const next = 1 + Math.floor(Math.random()*13);
+        const correct = dir === 'higher' ? next >= highCurrent : next <= highCurrent;
+        if (correct) highScore++; else highScore = 0;
+        document.getElementById('higherCurrent').textContent = `Current: ${highCurrent} → Next: ${next}`;
+        document.getElementById('higherResult').textContent = correct ? `Correct! Score: ${highScore}` : 'Wrong! Score reset.';
+        highCurrent = next;
+      }
+      document.getElementById('higherStart')?.addEventListener('click', startHigher);
+      document.getElementById('higherUp')?.addEventListener('click', ()=>guessHigher('higher'));
+      document.getElementById('higherDown')?.addEventListener('click', ()=>guessHigher('lower'));
+
+      // Lights
+      const lightsGrid = document.getElementById('lightsGrid');
+      if (lightsGrid) {
+        let lights = [];
+        function renderLights() {
+          lightsGrid.innerHTML = '';
+          lights.forEach((on, i) => {
+            const d = document.createElement('div');
+            d.className = 'light' + (on ? ' on' : '');
+            d.textContent = on ? '💡' : '';
+            d.onclick = () => toggleLight(i);
+            lightsGrid.appendChild(d);
+          });
+          if (lights.every(v=>!v)) document.getElementById('lightsStatus').textContent = 'You solved it!';
+        }
+        function toggleLight(i) {
+          [i, i-1, i+1, i-4, i+4].forEach(idx => { if (idx>=0 && idx<16) lights[idx] = !lights[idx]; });
+          renderLights();
+        }
+        function resetLights() {
+          lights = Array.from({length:16}, ()=>Math.random()>.5);
+          document.getElementById('lightsStatus').textContent = 'Turn off every light.';
+          renderLights();
+        }
+        document.getElementById('lightsReset').onclick = resetLights;
+        resetLights();
+      }
+
+      // Racer
+      const racerCanvas = document.getElementById('racerCanvas');
+      if (racerCanvas) {
+        const ctx = racerCanvas.getContext('2d');
+        let x = 138, obstacles = [], score = 0, loop = null;
+        const lanes = [52, 138, 224];
+        function draw() {
+          ctx.clearRect(0,0,300,230);
+          ctx.fillStyle = '#0b1220';
+          ctx.fillRect(0,0,300,230);
+          ctx.strokeStyle = 'rgba(255,255,255,.2)';
+          ctx.setLineDash([10,10]);
+          ctx.beginPath(); ctx.moveTo(100,0); ctx.lineTo(100,230); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(190,0); ctx.lineTo(190,230); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#60a5fa';
+          ctx.fillRect(x-14,188,28,30);
+          ctx.fillStyle = '#f87171';
+          obstacles.forEach(o => { ctx.fillRect(o.x-14, o.y, 28, 28); });
+        }
+        function step() {
+          if (Math.random()<0.06) obstacles.push({x: lanes[Math.floor(Math.random()*3)], y: -28});
+          obstacles.forEach(o => o.y += 4.5);
+          obstacles = obstacles.filter(o => o.y < 240);
+          for (const o of obstacles) {
+            if (o.y + 28 > 188 && o.y < 218 && Math.abs(o.x - x) < 24) {
+              clearInterval(loop);
+              document.getElementById('racerScore').textContent = `Crash! Score: ${score}`;
+              return;
+            }
+          }
+          score++;
+          document.getElementById('racerScore').textContent = `Score: ${score}`;
+          draw();
+        }
+        function start() { x=138; obstacles=[]; score=0; clearInterval(loop); loop=setInterval(step, 60); draw(); }
+        document.getElementById('racerStart').onclick = start;
+        document.getElementById('racerLeft').onclick = () => { x = lanes[Math.max(0, lanes.indexOf(x)-1)] || lanes[0]; draw(); };
+        document.getElementById('racerRight').onclick = () => { x = lanes[Math.min(2, lanes.indexOf(x)+1)] || lanes[2]; draw(); };
+        draw();
+      }
+
+      // Catch
+      const catchCanvas = document.getElementById('catchCanvas');
+      if (catchCanvas) {
+        const ctx = catchCanvas.getContext('2d');
+        let basketX = 120, stars = [], score = 0, loop = null;
+        function draw() {
+          ctx.clearRect(0,0,300,230);
+          ctx.fillStyle = '#0b1220';
+          ctx.fillRect(0,0,300,230);
+          ctx.fillStyle = '#facc15';
+          stars.forEach(s => {
+            ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, Math.PI*2); ctx.fill();
+          });
+          ctx.fillStyle = '#34d399';
+          ctx.fillRect(basketX, 202, 56, 10);
+        }
+        function step() {
+          if (Math.random()<0.08) stars.push({x: 10 + Math.random()*280, y: -10});
+          stars.forEach(s => s.y += 3.2);
+          stars = stars.filter(s => {
+            const caught = s.y > 194 && s.x > basketX-2 && s.x < basketX+58;
+            if (caught) score++;
+            return s.y < 240 && !caught;
+          });
+          document.getElementById('catchScore').textContent = `Score: ${score}`;
+          draw();
+        }
+        function start() { basketX=120; stars=[]; score=0; clearInterval(loop); loop=setInterval(step, 60); setTimeout(()=>clearInterval(loop), 15000); draw(); }
+        document.getElementById('catchStart').onclick = start;
+        document.getElementById('catchLeft').onclick = () => { basketX = Math.max(0, basketX-22); draw(); };
+        document.getElementById('catchRight').onclick = () => { basketX = Math.min(244, basketX+22); draw(); };
+        draw();
+      }
+
+      // Quiz
+      const quizData = [
+        {q:'What planet is known as the Red Planet?', c:['Mars','Venus','Jupiter'], a:'Mars'},
+        {q:'How many days are in a leap year?', c:['365','366','364'], a:'366'},
+        {q:'Which animal barks?', c:['Cat','Dog','Fish'], a:'Dog'},
+        {q:'What is 5 × 6?', c:['30','25','35'], a:'30'},
+        {q:'Which one is a fruit?', c:['Carrot','Apple','Celery'], a:'Apple'}
+      ];
+      let quizScore = 0, quizCurrent = null;
+      function nextQuiz() {
+        quizCurrent = quizData[Math.floor(Math.random()*quizData.length)];
+        document.getElementById('quizQ').textContent = quizCurrent.q;
+        const choices = document.getElementById('quizChoices');
+        choices.innerHTML = '';
+        quizCurrent.c.forEach(choice => {
+          const b = document.createElement('button');
+          b.className = 'btn';
+          b.textContent = choice;
+          b.onclick = () => {
+            if (choice === quizCurrent.a) quizScore++;
+            document.getElementById('quizScore').textContent = `Score: ${quizScore}`;
+            nextQuiz();
+          };
+          choices.appendChild(b);
+        });
+      }
+      document.getElementById('quizStart')?.addEventListener('click', ()=>{ quizScore=0; document.getElementById('quizScore').textContent='Score: 0'; nextQuiz(); });
+
+      // Emoji slot
+      const slotEmojis = ['🍒','🍋','⭐','🍀','💎'];
+      document.getElementById('emojiSpin')?.addEventListener('click', ()=>{
+        const a = slotEmojis[Math.floor(Math.random()*slotEmojis.length)];
+        const b = slotEmojis[Math.floor(Math.random()*slotEmojis.length)];
+        const c = slotEmojis[Math.floor(Math.random()*slotEmojis.length)];
+        document.getElementById('emojiSlots').textContent = `${a} ${b} ${c}`;
+        document.getElementById('emojiResult').textContent = a===b&&b===c ? 'JACKPOT!' : (a===b||b===c||a===c ? 'Nice pair!' : 'Try again!');
+      });
+
+      // Flappy Peak
+      const flappyCanvas = document.getElementById('flappyCanvas');
+      if (flappyCanvas) {
+        const ctx = flappyCanvas.getContext('2d');
+        let birdY = 110, birdV = 0, pipes = [], score = 0, running = false, anim = null;
+        function reset() {
+          birdY = 110; birdV = 0; pipes = []; score = 0; running = true;
+          document.getElementById('flappyScore').textContent = 'Score: 0';
+          cancelAnimationFrame(anim);
+          loop();
+        }
+        function jump() { if (running) birdV = -5.8; }
+        function drawScene() {
+          ctx.clearRect(0,0,300,230);
+          const sky = ctx.createLinearGradient(0,0,0,230);
+          sky.addColorStop(0,'#0ea5e9'); sky.addColorStop(1,'#1e293b');
+          ctx.fillStyle = sky; ctx.fillRect(0,0,300,230);
+          ctx.fillStyle = '#334155';
+          ctx.beginPath(); ctx.moveTo(0,230); ctx.lineTo(60,150); ctx.lineTo(130,230); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(80,230); ctx.lineTo(170,120); ctx.lineTo(260,230); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(180,230); ctx.lineTo(250,140); ctx.lineTo(300,230); ctx.fill();
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath(); ctx.arc(62, 44, 16, 0, Math.PI*2); ctx.fill();
+
+          ctx.fillStyle = '#22c55e';
+          pipes.forEach(p => {
+            ctx.fillRect(p.x, 0, 34, p.top);
+            ctx.fillRect(p.x, p.bottom, 34, 230-p.bottom);
+          });
+
+          ctx.fillStyle = '#fde68a';
+          ctx.beginPath(); ctx.arc(82, birdY, 12, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = '#111827';
+          ctx.beginPath(); ctx.arc(86, birdY-3, 2, 0, Math.PI*2); ctx.fill();
+        }
+        function loop() {
+          if (!running) return;
+          birdV += 0.34;
+          birdY += birdV;
+          if (Math.random() < 0.024) {
+            const gapY = 55 + Math.random()*95;
+            const gapH = 60;
+            pipes.push({ x: 300, top: gapY - gapH/2, bottom: gapY + gapH/2, scored: false });
+          }
+          pipes.forEach(p => p.x -= 2.5);
+          pipes = pipes.filter(p => p.x > -40);
+          pipes.forEach(p => {
+            if (!p.scored && p.x + 34 < 82) { p.scored = true; score++; document.getElementById('flappyScore').textContent = `Score: ${score}`; }
+            const hitX = 82+12 > p.x && 82-12 < p.x+34;
+            const hitY = birdY-12 < p.top || birdY+12 > p.bottom;
+            if (hitX && hitY) running = false;
+          });
+          if (birdY < 0 || birdY > 230) running = false;
+          drawScene();
+          if (!running) {
+            ctx.fillStyle = 'rgba(0,0,0,.45)';
+            ctx.fillRect(0,0,300,230);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('Game Over', 94, 110);
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('Press Start to play again', 78, 138);
+            return;
+          }
+          anim = requestAnimationFrame(loop);
+        }
+        document.getElementById('flappyStart').onclick = reset;
+        document.getElementById('flappyJump').onclick = jump;
+        window.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); jump(); } });
+        drawScene();
+      }
+
+      // Simon Says
+      const simonGrid = document.getElementById('simonGrid');
+      if (simonGrid) {
+        const simonColors = [
+          {name:'A', color:'#60a5fa'},
+          {name:'B', color:'#34d399'},
+          {name:'C', color:'#fbbf24'},
+          {name:'D', color:'#fb7185'}
+        ];
+        simonGrid.innerHTML = '';
+        simonColors.forEach((c, i) => {
+          const d = document.createElement('div');
+          d.className = 'simon';
+          d.textContent = c.name;
+          d.style.background = c.color;
+          d.style.color = '#08111d';
+          d.dataset.idx = i;
+          simonGrid.appendChild(d);
+        });
+        let sequence = [], userStep = 0, locked = true;
+        const pads = [...simonGrid.children];
+        const flash = idx => new Promise(resolve => {
+          const old = pads[idx].style.filter;
+          pads[idx].style.filter = 'brightness(1.4)';
+          pads[idx].style.transform = 'scale(1.05)';
+          setTimeout(() => {
+            pads[idx].style.filter = old;
+            pads[idx].style.transform = 'scale(1)';
+            resolve();
+          }, 330);
+        });
+        async function playSequence() {
+          locked = true;
+          document.getElementById('simonStatus').textContent = 'Watch the sequence...';
+          for (const idx of sequence) {
+            await new Promise(r => setTimeout(r, 220));
+            await flash(idx);
+          }
+          userStep = 0;
+          locked = false;
+          document.getElementById('simonStatus').textContent = 'Your turn.';
+        }
+        function nextRound() {
+          sequence.push(Math.floor(Math.random()*4));
+          document.getElementById('simonScore').textContent = `Level: ${sequence.length}`;
+          playSequence();
+        }
+        pads.forEach((p, idx) => p.onclick = async () => {
+          if (locked) return;
+          await flash(idx);
+          if (idx !== sequence[userStep]) {
+            document.getElementById('simonStatus').textContent = 'Wrong pattern! Press Start.';
+            document.getElementById('simonScore').textContent = `Level: ${sequence.length}`;
+            locked = true;
+            return;
+          }
+          userStep++;
+          if (userStep === sequence.length) {
+            document.getElementById('simonStatus').textContent = 'Nice! Next round...';
+            locked = true;
+            setTimeout(nextRound, 700);
+          }
+        });
+        document.getElementById('simonStart').onclick = () => {
+          sequence = []; userStep = 0; locked = true;
+          document.getElementById('simonStatus').textContent = 'Starting...';
+          document.getElementById('simonScore').textContent = 'Level: 0';
+          nextRound();
+        };
+      }
+    }
+
+    renderGames();
+  </script>
+</body>
+</html>
